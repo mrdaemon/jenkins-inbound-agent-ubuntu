@@ -1,6 +1,6 @@
 # I'm terribly sorry about all of this.
 
-ARG UBUNTU_RELEASE=22.04
+ARG UBUNTU_RELEASE=24.04
 
 FROM ubuntu:"${UBUNTU_RELEASE}" AS builder
 
@@ -54,7 +54,14 @@ ARG group=jenkins
 ARG uid=1000
 ARG gid=1000
 
-RUN groupadd --gid "${gid}" "${group}" \
+# Ubuntu image in recent-ish versions has a default user "ubuntu" with uid 1000
+# So we drop it to avoid conflicts with the jenkins one.
+#
+# We COULD use the ubuntu user straight up, but it is not present in the older 
+# LTS versions, so "creating the user" is the lowest common denominator to
+# ensure the image builds with as many UBUNTU_RELEASE args as possible.
+RUN userdel -r ubuntu || true \
+    && groupadd --gid "${gid}" "${group}" \
     && useradd --shell /bin/bash --create-home --uid "${uid}" --gid "${gid}" "${user}"
 
 ARG AGENT_WORKDIR=/home/${user}/agent
